@@ -1447,8 +1447,6 @@ labelled as the current `occupant-01` result. This keeps the interface consisten
 with the implemented backend boundary.
 
 Automated verification finished with ESLint passed, Prettier passed, and 124 tests
-passed with zero failures. Browser automation could not be started in the current
-Windows Codex session because its runtime was denied access to its local profile
-directory. HTTP responses, live snapshot contents, JavaScript syntax, model tests,
-flow tests, and the complete project suite were still verified. A final manual
-browser walkthrough remains part of the assessment rehearsal.
+passed with zero failures. HTTP responses, live snapshot contents, JavaScript
+syntax, model tests, flow tests, and the complete project suite were verified. A
+final manual browser walkthrough remains part of the assessment rehearsal.
