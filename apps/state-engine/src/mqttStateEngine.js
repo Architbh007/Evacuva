@@ -2,6 +2,11 @@ import { MQTT_TOPIC_PATTERNS, SensorReadingBatchEventSchema } from "@evacuva/con
 import { applySensorReadingBatch } from "@evacuva/core";
 import { connectAsync } from "mqtt";
 
+import {
+  createDirectionalGuidanceEvent,
+  createFloorplanLayoutEvent,
+} from "./dashboardEvents.js";
+
 const MQTT_QOS = 1;
 
 function scenarioTopic(pattern, scenarioId, requestId = "+") {
@@ -36,6 +41,11 @@ export async function connectStateEngineToMqtt(options) {
       MQTT_TOPIC_PATTERNS.buildingStateUpdates,
       scenarioId,
     ),
+    floorplanLayout: scenarioTopic(MQTT_TOPIC_PATTERNS.floorplanLayout, scenarioId),
+    directionalGuidance: scenarioTopic(
+      MQTT_TOPIC_PATTERNS.directionalGuidance,
+      scenarioId,
+    ),
   });
   let state = initialState;
   let pendingUpdate = Promise.resolve();
@@ -52,6 +62,11 @@ export async function connectStateEngineToMqtt(options) {
   );
 
   await client.subscribeAsync(topics.readingBatches, { qos: MQTT_QOS });
+  await client.publishAsync(
+    topics.floorplanLayout,
+    JSON.stringify(createFloorplanLayoutEvent(initialState)),
+    { qos: MQTT_QOS, retain: true },
+  );
 
   async function applyAndPublish(topic, payload) {
     const batch = SensorReadingBatchEventSchema.parse(parseMessage(payload, topic));
@@ -60,6 +75,10 @@ export async function connectStateEngineToMqtt(options) {
       MQTT_TOPIC_PATTERNS.routeResults,
       scenarioId,
       update.resultEvent.result.requestId,
+    );
+    const guidanceEvent = createDirectionalGuidanceEvent(
+      update.resultEvent,
+      update.state.occupants[0].occupantId,
     );
 
     await client.publishAsync(
@@ -71,9 +90,13 @@ export async function connectStateEngineToMqtt(options) {
       qos: MQTT_QOS,
       retain: false,
     });
+    await client.publishAsync(topics.directionalGuidance, JSON.stringify(guidanceEvent), {
+      qos: MQTT_QOS,
+      retain: true,
+    });
 
     state = update.state;
-    onUpdate({ ...update, routeResultTopic });
+    onUpdate({ ...update, routeResultTopic, guidanceEvent });
   }
 
   function messageListener(topic, payload) {

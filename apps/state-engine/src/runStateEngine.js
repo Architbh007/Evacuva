@@ -36,6 +36,7 @@ async function run() {
   process.stdout.write(
     `State engine connected to ${brokerUrl} for ${initialState.scenarioId}.\n`,
   );
+  process.stdout.write(`Published floorplan on ${connection.topics.floorplanLayout}\n`);
   process.stdout.write(`Listening for batches on ${connection.topics.readingBatches}\n`);
 }
 
