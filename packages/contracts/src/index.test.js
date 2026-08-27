@@ -7,6 +7,8 @@ import {
   CoordinateSchema,
   DEFAULT_FLOORPLAN_CONFIGURATION,
   DEFAULT_SAFETY_PARAMETERS,
+  DirectionalGuidanceEventSchema,
+  FloorplanLayoutEventSchema,
   FloorplanConfigurationSchema,
   IndependentRouteResultRecordSchema,
   MQTT_TOPIC_PATTERNS,
@@ -394,5 +396,69 @@ test("sensor batches reject the wrong size and inconsistent reading times", () =
       readings: [readingEvent],
     }).success,
     false,
+  );
+});
+
+test("dashboard contracts describe the map and next safe direction", () => {
+  const timestamp = "2026-08-27T10:15:00.000Z";
+  const occupants = Array.from({ length: 10 }, (_, index) => ({
+    occupantId: `occupant-${String(index + 1).padStart(2, "0")}`,
+    scenarioId: "scenario-48291",
+    start: { x: index + 1, y: 1 },
+    startSource: "generated",
+  }));
+  const sensor = {
+    sensorId: "smoke-sensor-01",
+    type: "smoke",
+    coordinate: { x: 10, y: 10 },
+  };
+  const reading = {
+    eventId: "smoke-sensor-01-event-1",
+    scenarioId: "scenario-48291",
+    sensorId: sensor.sensorId,
+    coordinate: sensor.coordinate,
+    timestamp,
+    sequence: 1,
+    healthy: true,
+    type: "smoke",
+    value: 0,
+  };
+  const layout = {
+    messageType: "floorplan-layout",
+    scenarioId: "scenario-48291",
+    stateVersion: 1,
+    width: 100,
+    height: 100,
+    rows: Array.from({ length: 100 }, () => ".".repeat(100)),
+    occupants,
+    sensors: [sensor],
+    latestReadings: [reading],
+    publishedAt: timestamp,
+  };
+
+  assert.equal(FloorplanLayoutEventSchema.safeParse(layout).success, true);
+  assert.equal(
+    FloorplanLayoutEventSchema.safeParse({
+      ...layout,
+      rows: [".".repeat(99)],
+    }).success,
+    false,
+  );
+  assert.equal(
+    DirectionalGuidanceEventSchema.safeParse({
+      messageType: "directional-guidance",
+      eventId: "directional-guidance-route-request-2",
+      requestId: "route-request-2",
+      occupantId: "occupant-01",
+      scenarioId: "scenario-48291",
+      stateVersion: 2,
+      status: "success",
+      direction: "east",
+      nextCoordinate: { x: 11, y: 10 },
+      selectedExit: { x: 99, y: 10 },
+      remainingSteps: 88,
+      publishedAt: timestamp,
+    }).success,
+    true,
   );
 });

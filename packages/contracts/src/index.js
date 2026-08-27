@@ -582,7 +582,79 @@ export const MQTT_TOPIC_PATTERNS = Object.freeze({
   buildingStateUpdates: "evacuva/scenarios/{scenarioId}/building-state/updates",
   routeRequests: "evacuva/scenarios/{scenarioId}/route-requests",
   routeResults: "evacuva/scenarios/{scenarioId}/route-results/{requestId}",
+  floorplanLayout: "evacuva/scenarios/{scenarioId}/floorplan/layout",
+  directionalGuidance: "evacuva/scenarios/{scenarioId}/directional-sign/guidance",
 });
+
+export const FloorplanLayoutEventSchema = z
+  .object({
+    messageType: z.literal("floorplan-layout"),
+    scenarioId: z.string().min(1),
+    stateVersion: z.number().int().positive(),
+    width: z.literal(100),
+    height: z.literal(100),
+    rows: z.array(z.string().regex(/^[.#E]{100}$/)).length(100),
+    occupants: z.array(OccupantSchema).length(STANDARD_OCCUPANT_COUNT),
+    sensors: z.array(SensorDefinitionSchema).min(1),
+    latestReadings: z.array(SensorReadingSchema),
+    publishedAt: z.string().datetime({ offset: true }),
+  })
+  .superRefine((event, context) => {
+    for (const [index, occupant] of event.occupants.entries()) {
+      if (occupant.scenarioId !== event.scenarioId) {
+        context.addIssue({
+          code: "custom",
+          message: "Occupant scenario ID must match the layout",
+          path: ["occupants", index, "scenarioId"],
+        });
+      }
+    }
+
+    for (const [index, reading] of event.latestReadings.entries()) {
+      if (reading.scenarioId !== event.scenarioId) {
+        context.addIssue({
+          code: "custom",
+          message: "Reading scenario ID must match the layout",
+          path: ["latestReadings", index, "scenarioId"],
+        });
+      }
+    }
+  });
+
+const DirectionalGuidanceMetadataSchema = z.object({
+  messageType: z.literal("directional-guidance"),
+  eventId: z.string().min(1),
+  requestId: z.string().min(1),
+  occupantId: OccupantIdSchema,
+  scenarioId: z.string().min(1),
+  stateVersion: z.number().int().positive(),
+  publishedAt: z.string().datetime({ offset: true }),
+});
+
+export const SuccessfulDirectionalGuidanceEventSchema =
+  DirectionalGuidanceMetadataSchema.extend({
+    status: z.literal("success"),
+    direction: z.enum(["north", "east", "south", "west"]),
+    nextCoordinate: CoordinateSchema,
+    selectedExit: CoordinateSchema,
+    remainingSteps: z.number().int().positive(),
+  });
+
+export const UnavailableDirectionalGuidanceEventSchema =
+  DirectionalGuidanceMetadataSchema.extend({
+    status: z.literal("unavailable"),
+    reason: z.enum([
+      "invalid_start",
+      "blocked_start",
+      "all_exits_blocked",
+      "unreachable_exit",
+    ]),
+  });
+
+export const DirectionalGuidanceEventSchema = z.discriminatedUnion("status", [
+  SuccessfulDirectionalGuidanceEventSchema,
+  UnavailableDirectionalGuidanceEventSchema,
+]);
 
 export const SensorReadingEventSchema = z.object({
   messageType: z.literal("sensor-reading"),
