@@ -1,7 +1,7 @@
 # Evacuva Project Design
 
-**Status:** Phase 4.5.4 completed and verified in AWS  
-**Last updated:** 22 August 2026  
+**Status:** Phase 5 visual application implemented and verified locally
+**Last updated:** 27 August 2026
 **Governed by:** `Rules.md`
 
 ## 1. Purpose of this document
@@ -1894,3 +1894,86 @@ deployment is required before AWS result records use that correction.
 The ALB is limited to the HTTP request service and is not placed between SQS and
 route workers. Deployment YAML, CI/CD pipelines, and additional databases remain
 outside the approved university scope.
+
+## 40. Phase 5 visual application
+
+**Milestone:** Present the live evacuation state and measured scalability evidence
+**Status:** Application implementation completed and locally verified
+
+### 40.1 Smallest suitable boundary
+
+The existing Node-RED process serves the static browser files and exposes one
+read-only snapshot endpoint. This avoids adding another server, dependency, or
+copy of the validation logic. Node-RED remains responsible for accepting only the
+validated MQTT events that are already used by the local workflow.
+
+The local state engine publishes two retained presentation events:
+
+- the compact 100 by 100 floorplan layout, published when the engine starts
+- the current first-step directional guidance, published after route calculation
+
+The retained messages allow Node-RED and the browser application to restart
+without waiting for the next layout or route calculation. Building-state and
+route-result events continue to use their existing topics and contracts.
+
+### 40.2 Application data flow
+
+```text
+Validated sensor batches -> Local state engine -> state and route events
+                                      |
+                                      +-> retained floorplan and guidance
+                                                       |
+                                                       v
+                                             Node-RED snapshot
+                                                       |
+                                                       v
+                                                Browser `/app/`
+```
+
+The snapshot combines the newest validated layout, readings, state, route, and
+guidance. The HTTP endpoint does not mutate state or calculate a route. The browser
+polls this boundary and renders the returned model.
+
+### 40.3 Interface behaviour
+
+The application contains only the views needed to explain the project:
+
+- a canvas-rendered 100 by 100 floorplan with walls, walkable cells, exits,
+  occupants, sensors, and the current safe route
+- a ten-occupant picker that changes the visual highlight
+- a route summary and a clear first-step direction
+- a filterable table of 42 current sensor readings
+- the measured twentieth-request SLA, sustained-load, and worker comparison
+  evidence
+- visible scalability, sustainability, and prototype limitations
+
+The current local state engine calculates the displayed route for `occupant-01`.
+Selecting another occupant therefore changes only the map highlight. The interface
+states this constraint instead of implying that a new calculation was requested.
+
+### 40.4 Completion evidence
+
+The complete local workflow returned HTTP 200 for both `/app/` and
+`/api/dashboard-snapshot`. The live snapshot contained 100 floorplan rows, ten
+occupants, 42 sensors, 42 current readings, a successful route, and cardinal
+directional guidance. The simulator continued changing five sensor readings every
+five seconds during verification.
+
+The full quality check passed ESLint, Prettier, and 124 tests with no failures.
+Focused tests cover the new contracts, compact presentation events, application
+display mapping, retained MQTT inputs, snapshot storage, and the read-only HTTP
+endpoint.
+
+### 40.5 Recorded limitations and remaining submission work
+
+The interface is a local university demonstration, not a certified emergency
+system. It does not submit new cloud routes when the occupant highlight changes,
+and it does not claim that the observed SLA is guaranteed. Six workers passed four
+of five controlled twentieth-request trials; larger 50- and 100-request bursts
+still exceeded five seconds at p95.
+
+Persistent Timestream sensor history and S3 evidence storage have not been added.
+They should be implemented only if the final assessment explicitly requires
+persistent AWS history. Final written evaluation, evidence packaging, and
+demonstration rehearsal remain submission tasks rather than hidden application
+features.
