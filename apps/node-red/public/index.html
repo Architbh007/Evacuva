@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Evacuva building state, sensor readings and safest-route dashboard"
+    />
+    <title>Evacuva | Building safety</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/app/" aria-label="Evacuva dashboard home">
+        <span class="brand-mark" aria-hidden="true">E</span>
+        <span><strong>Evacuva</strong><small>Building safety dashboard</small></span>
+      </a>
+      <div class="connection" aria-live="polite">
+        <span id="connection-dot" class="connection-dot"></span>
+        <span id="connection-label">Waiting for Node-RED data</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Scenario <span id="scenario-id">scenario-48291</span></p>
+          <h1 id="page-title">Live evacuation overview</h1>
+          <p>
+            A clear view of the simulated building, its ten occupants, sensor conditions
+            and latest validated safe route.
+          </p>
+        </div>
+        <dl class="state-summary">
+          <div>
+            <dt>State version</dt>
+            <dd id="state-version">—</dd>
+          </div>
+          <div>
+            <dt>Sensor readings</dt>
+            <dd id="reading-count">—</dd>
+          </div>
+          <div>
+            <dt>Last update</dt>
+            <dd id="last-update">—</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="dashboard-grid" aria-label="Current evacuation state">
+        <article class="panel map-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">100 × 100 floorplan</p>
+              <h2>Building map</h2>
+            </div>
+            <label class="occupant-picker">
+              Inspect occupant
+              <select id="occupant-select" disabled>
+                <option>Waiting for occupants</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="map-frame">
+            <canvas
+              id="floorplan-canvas"
+              width="800"
+              height="800"
+              aria-label="Building floorplan with occupants, sensors and safest route"
+            ></canvas>
+            <div id="map-placeholder" class="map-placeholder">
+              Start the broker, Node-RED and state engine to load the floorplan.
+            </div>
+          </div>
+
+          <div class="legend" aria-label="Map legend">
+            <span><i class="legend-floor"></i>Walkable</span>
+            <span><i class="legend-wall"></i>Wall</span>
+            <span><i class="legend-exit"></i>Exit</span>
+            <span><i class="legend-route"></i>Safe route</span>
+            <span><i class="legend-occupant"></i>Occupant</span>
+            <span><i class="legend-sensor"></i>Sensor</span>
+          </div>
+          <p class="map-note">
+            Selecting an occupant highlights their position. The local automatic route is
+            calculated for <strong>occupant-01</strong> after each accepted sensor batch.
+          </p>
+        </article>
+
+        <aside class="side-stack">
+          <article class="panel occupant-panel">
+            <p class="eyebrow">Selected person</p>
+            <h2 id="selected-occupant">No occupant selected</h2>
+            <p id="occupant-position" class="large-value">Coordinate —</p>
+            <p id="occupant-source" class="muted">Waiting for the floorplan.</p>
+          </article>
+
+          <article class="panel guidance-panel">
+            <p class="eyebrow">Directional sign</p>
+            <div id="direction-icon" class="direction-icon" aria-hidden="true">·</div>
+            <h2 id="guidance-title">Waiting for a route</h2>
+            <p id="guidance-detail" class="muted">
+              Guidance is published after a validated calculation.
+            </p>
+          </article>
+
+          <article class="panel route-panel">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">Latest calculation</p>
+                <h2>Safest route</h2>
+              </div>
+              <span id="route-status" class="status-badge neutral">Waiting</span>
+            </div>
+            <dl class="detail-list">
+              <div>
+                <dt>Path length</dt>
+                <dd id="route-length">—</dd>
+              </div>
+              <div>
+                <dt>Route cost</dt>
+                <dd id="route-cost">—</dd>
+              </div>
+              <div>
+                <dt>Selected exit</dt>
+                <dd id="route-exit">—</dd>
+              </div>
+              <div>
+                <dt>Total latency</dt>
+                <dd id="route-latency">—</dd>
+              </div>
+            </dl>
+          </article>
+        </aside>
+      </section>
+
+      <section class="panel sensor-panel" aria-labelledby="sensor-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Updated every five seconds</p>
+            <h2 id="sensor-title">Latest sensor readings</h2>
+          </div>
+          <label class="sensor-filter">
+            Sensor type
+            <select id="sensor-filter">
+              <option value="all">All sensors</option>
+              <option value="smoke">Smoke</option>
+              <option value="temperature">Temperature</option>
+              <option value="occupancy">Occupancy</option>
+              <option value="door">Exit door</option>
+            </select>
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sensor</th>
+                <th>Type</th>
+                <th>Reading</th>
+                <th>Sequence</th>
+                <th>Condition</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="sensor-table-body">
+              <tr>
+                <td colspan="6" class="empty-row">Waiting for readings.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <a class="text-link" href="/dashboard/overview">
+          Open Node-RED sensor controls and processing tables
+        </a>
+      </section>
+
+      <section class="evidence" aria-labelledby="evidence-title">
+        <div class="section-heading">
+          <p class="eyebrow">Measured AWS results</p>
+          <h2 id="evidence-title">What scaling changed</h2>
+          <p>
+            These figures come from the controlled Phase 4.6 experiments, not from
+            estimates made by this dashboard.
+          </p>
+        </div>
+
+        <div class="evidence-cards">
+          <article>
+            <span>Controlled SLA run</span><strong>4.207 s</strong>
+            <p>Twentieth result in one successful 20-request run.</p>
+          </article>
+          <article>
+            <span>Six-worker trials</span><strong>7 / 8</strong>
+            <p>Observed twentieth-request SLA passes across all recorded trials.</p>
+          </article>
+          <article>
+            <span>Sustained workload</span><strong>480 / 480</strong>
+            <p>Valid routes during the ten-requests-every-five-seconds experiment.</p>
+          </article>
+        </div>
+
+        <div class="comparison panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Experiment</th>
+                <th>One worker</th>
+                <th>Six workers</th>
+                <th>Observed change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>20-request SLA trials</td>
+                <td>0 / 5 passed</td>
+                <td>7 / 8 passed</td>
+                <td>Parallel workers usually met the target</td>
+              </tr>
+              <tr>
+                <td>50-request p95 latency</td>
+                <td>34.953 s</td>
+                <td>12.690 s</td>
+                <td>22.263 s lower</td>
+              </tr>
+              <tr>
+                <td>100-request p95 latency</td>
+                <td>68.106 s</td>
+                <td>19.537 s</td>
+                <td>48.569 s lower</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="limitations" aria-labelledby="limitations-title">
+        <h2 id="limitations-title">Prototype boundaries</h2>
+        <p>
+          Evacuva uses simulated sensors and experimental safety thresholds. The map
+          demonstrates scalable route processing for university evaluation; it is not a
+          certified emergency-navigation system. The recorded trials show strong
+          improvement, but they do not prove a guaranteed five-second service level.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <span>Evacuva university scalability project</span>
+      <span>Node.js · Node-RED · MQTT · AWS</span>
+    </footer>
+
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>
