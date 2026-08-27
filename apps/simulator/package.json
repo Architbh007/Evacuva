@@ -1,0 +1,12 @@
+{
+  "name": "@evacuva/simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@evacuva/contracts": "*",
+    "@evacuva/core": "*",
+    "aedes": "^1.1.1",
+    "mqtt": "^5.15.2"
+  }
+}

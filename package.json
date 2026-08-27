@@ -1,0 +1,42 @@
+{
+  "name": "evacuva",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "mqtt:broker": "node apps/simulator/src/runLocalMqttBroker.js",
+    "node-red": "node node_modules/node-red/red.js --userDir apps/node-red --settings apps/node-red/settings.cjs apps/node-red/flows.json",
+    "simulate:sensors": "node apps/simulator/src/runSimulator.js",
+    "state-engine": "node apps/state-engine/src/runStateEngine.js",
+    "state-coordinator": "node apps/state-coordinator/src/runStateCoordinator.js",
+    "state-coordinator:once": "node apps/state-coordinator/src/runStateCoordinator.js --once",
+    "route-worker": "node apps/route-worker/src/runRouteWorker.js",
+    "route-worker:once": "node apps/route-worker/src/runRouteWorker.js --once",
+    "request-service": "node apps/request-service/src/runRequestService.js",
+    "load-test:route": "node apps/load-generator/src/runRouteLoadExperiment.js",
+    "container:build:route-worker": "docker build --file apps/route-worker/Dockerfile --tag evacuva-route-worker:local .",
+    "container:build:request-service": "docker build --file apps/request-service/Dockerfile --tag evacuva-request-service:local .",
+    "aws:setup:routing-table": "node apps/route-worker/src/runRoutingTableSetup.js",
+    "aws:setup:state-update-queue": "node apps/state-coordinator/src/runStateUpdateQueueSetup.js",
+    "aws:test:state-update": "node apps/state-coordinator/src/runStateUpdateLiveTest.js",
+    "aws:setup:retry-policy": "node apps/route-worker/src/runRetryPolicySetup.js",
+    "aws:test:duplicate-delivery": "node apps/route-worker/src/runDuplicateDeliveryTest.js",
+    "test": "node --test --test-concurrency=1",
+    "check": "npm run lint && npm run format:check && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "prettier": "^3.9.6"
+  }
+}
