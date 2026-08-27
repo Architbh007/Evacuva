@@ -1,0 +1,15 @@
+node_modules/
+coverage/
+.env
+.env.*
+aws/*.crt
+aws/*.key
+aws/*.pem
+aws/ss
+apps/node-red/.config.*
+apps/node-red/.sessions.json
+apps/node-red/.flows.json.backup
+apps/node-red/flows_cred.json
+apps/node-red/lib/
+apps/node-red/flows.json
+apps/node-red/flows.test.cjs
