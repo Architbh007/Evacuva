@@ -1977,3 +1977,36 @@ They should be implemented only if the final assessment explicitly requires
 persistent AWS history. Final written evaluation, evidence packaging, and
 demonstration rehearsal remain submission tasks rather than hidden application
 features.
+
+## 41. Independent application redesign
+
+**Milestone:** Move the visual application out of Node-RED
+**Status:** Approved on 2 September 2026
+
+The browser application will run as a separate Next.js and React workspace on
+`127.0.0.1:3001`. Node-RED will continue validating and batching sensor readings
+and forwarding accepted batches to AWS, but it will no longer serve application
+files or maintain an HTTP dashboard snapshot.
+
+The Next.js server will use one MQTT connection for the presentation boundary. It
+will subscribe to the existing validated event contracts, keep only the latest
+in-memory snapshot, and expose two same-origin route handlers:
+
+- `GET /api/dashboard-snapshot` returns the current layout, readings, route, and
+  guidance
+- `POST /api/sensor-controls` validates and publishes a manual override or resume
+  command to the existing simulator control topics
+
+This boundary keeps MQTT credentials and broker access out of the browser. It also
+reuses the existing contracts instead of copying validation into React or adding a
+second database.
+
+The interface will use flat neutral greys with no gradients. All ten occupants
+will be black markers. Temperature sensors will be red, occupancy sensors blue,
+smoke sensors orange, and exit-door sensors green. A visible legend will explain
+the colours. Pointer interaction will identify a map cell, occupant, or sensor,
+and selecting a sensor will prepare its manual-control form.
+
+The application will retain the recorded experiment evidence but reduce decorative
+content. The map, current route, next direction, manual sensor control, live sensor
+table, and measured scalability results are the necessary views.
