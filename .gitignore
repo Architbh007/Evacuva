@@ -1,5 +1,6 @@
 node_modules/
 coverage/
+.next/
 .env
 .env.*
 aws/*.crt
