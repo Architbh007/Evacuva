@@ -5,14 +5,14 @@ through a simulated building. It combines a generated 100 by 100 floorplan with
 smoke, temperature, occupancy, and exit-door readings. This is not a certified
 emergency system and must not be used for real evacuation decisions.
 
-**Current status:** The Phase 5 visual application is implemented and verified
-locally. It presents the live 100 by 100 floorplan, ten occupants, 42 sensor
-readings, the current route, directional guidance, and the recorded scalability
-evidence. The Phase 4 cloud pipeline remains the measured backend: two request
-services sit behind an Application Load Balancer and SQS distributes independent
-requests to two-to-ten autoscaled route workers. The twentieth-request SLA passed
-four of five six-worker trials and zero of five one-worker trials, so the prototype
-shows a clear scaling benefit without claiming a guaranteed SLA.
+**Current status:** The Phase 5 visual application now runs independently in
+Next.js and React on port 3001. It presents the live 100 by 100 floorplan, all ten
+occupants, 42 sensor readings, the current route, directional guidance, manual
+sensor controls, and the recorded scalability evidence. Node-RED remains focused
+on sensor validation, batching, its operational tables, and AWS forwarding. The
+twentieth-request SLA passed four of five six-worker trials and zero of five
+one-worker trials, so the prototype shows a clear scaling benefit without claiming
+a guaranteed SLA.
 
 ## Current implemented flow
 
@@ -32,9 +32,9 @@ AWS IoT Core -> State-update queue -> State coordinator
                               DynamoDB current and versioned state
 
 Local MQTT -> State engine -> retained layout, state, route and guidance
-                                                    |
-                                                    v
-                                  Node-RED snapshot -> browser application
+       |                                            |
+       |                                            v
+       +-> Next.js MQTT store -> React application and manual controls
 
 HTTP client -> Application Load Balancer -> Two request-service tasks
                                                     |
@@ -174,9 +174,14 @@ The API does not calculate routes, and route workers are not ALB targets.
 - [x] Render the complete 100 by 100 floorplan on a browser canvas.
 - [x] Show all ten occupants and highlight the selected occupant without implying
       that a new route has been calculated.
+- [x] Use black occupant markers and distinct red, blue, orange, and green sensor
+      markers with a visible legend.
 - [x] Show the current validated route, its status, cost, and first safe direction.
 - [x] Show all 42 sensor readings with type, condition, value, and coordinates.
-- [x] Expose the latest validated Node-RED data through one read-only snapshot API.
+- [x] Run the Next.js and React application independently from Node-RED.
+- [x] Expose the latest validated MQTT data through one Next.js snapshot API.
+- [x] Publish validated manual override and resume commands from the application.
+- [x] Allow map hover inspection and map selection of occupants and sensors.
 - [x] Present the measured SLA, sustained-load, and worker comparison evidence.
 - [x] State the prototype, scalability, and sustainability limitations visibly.
 
@@ -187,7 +192,7 @@ The current project quality check reports:
 ```text
 ESLint: passed
 Prettier: passed
-Tests: 124 passed, 0 failed
+Tests: 125 passed, 0 failed
 ```
 
 The earlier route-worker image scan reported 3 critical, 5 high, 11 medium, and
@@ -290,18 +295,19 @@ npm.cmd install
 npm.cmd run check
 ```
 
-Run the local workflow in four terminals:
+Run the local workflow in five terminals:
 
 ```text
 npm.cmd run mqtt:broker
 npm.cmd run state-engine
 npm.cmd run node-red
 npm.cmd run simulate:sensors
+npm.cmd run dashboard
 ```
 
-Open the visual application at `http://127.0.0.1:1880/app/`. The existing
-Node-RED controls remain available at
-`http://127.0.0.1:1880/dashboard/overview`.
+Open the visual application at `http://127.0.0.1:3001`. Node-RED remains available
+separately at `http://127.0.0.1:1880` for flow editing, debug output, and its
+existing operational tables.
 
 Run the request service against AWS from Git Bash after loading valid Academy
 credentials:
