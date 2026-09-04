@@ -14,3 +14,6 @@ apps/node-red/flows_cred.json
 apps/node-red/lib/
 apps/node-red/flows.json
 apps/node-red/flows.test.cjs
+Design.md
+Progress.md
+Rules.md
